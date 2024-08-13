@@ -22,7 +22,7 @@ function createGoogleDocReport() {
   var startDate = new Date(today.getTime() - numDaysToLookBack * 24 * 60 * 60 * 1000);
   var startDateString = startDate.toISOString().substring(0, 10).replace(/-/g, '/');
   var endDateString = today.toISOString().substring(0, 10).replace(/-/g, '/');
-  var docName = `Email Summary Report ${startDateString} to ${endDateString}`;
+  var docName = `Email Summary Report ${inboxType} ${startDateString} to ${endDateString}`;
   var doc = getOrCreateDocument(docName);
   var body = doc.getBody();
   body.clear();

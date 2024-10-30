@@ -1,20 +1,20 @@
 # Email Summarizer with OpenAI
 
-This Email Summarizer is a script designed to provide concise summaries of your Gmail emails over a specified number of days. It leverages OpenAI's GPT model to synthesize email data into readable, single-sentence summaries.
+This Email Summarizer is a script designed to provide a concise email summary (to yourself) of specified Gmail emails over a specified number of days. It leverages OpenAI's GPT model to synthesize email data into readable, single-sentence summaries.
 
 ## Features
 
 1. **Customizable Time Frame**: Set the number of days in the past for which you want to summarize emails.
 2. **Filter by Read/Unread**: Option to only summarize unread emails, helping you catch up quickly on unattended emails.
 3. **Category-specific Summaries**: Summarize emails by Gmail categories such as primary, social, promotions, etc.
-4. **Automated Document Creation**: Generates a Google Doc report with summaries of all relevant emails.
+4. **Automated Email Summary Creation**: Generates an email report to yourself with bullet point summary of all relevant emails
 5. **Link to Original Email**: Each summary in the report includes a direct link to the original email for easy access.
 6. **OpenAI Integration**: Utilizes powerful AI from OpenAI for generating concise and relevant summaries.
 
 ## How to Install
 
 ### Prerequisites
-- A Google account with Gmail and Google Drive access.
+- A Google account with Gmail access.
 - Access to Google Apps Script.
 - An API key from OpenAI.
 
@@ -27,8 +27,8 @@ This Email Summarizer is a script designed to provide concise summaries of your 
    - Replace `"<key-goes-here>"` with your actual OpenAI API key in the `openaiApiKey` variable.
    - Save and name your project.
 3. **Grant Necessary Permissions**:
-   - Run any function (like `createGoogleDocReport`) from the script editor to trigger the authorization process.
-   - Review and accept the permissions required for accessing your Gmail and Google Docs.
+   - Run any function from the script editor to trigger the authorization process.
+   - Review and accept the permissions required for accessing your Gmail.
 
 ## Modifying and Customization
 

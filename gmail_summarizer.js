@@ -1,10 +1,10 @@
 // The open-ai API-key. Replace api-key between the quotation marks ("<key-goes-here>")
 // The line should look like:
 // var openApiKey= "sk-8wQYhgoKAULIzxvntoheuntoahunoahusntoheusnoh-oouthontuhontuhosntuhosntuh"
-var openaiApiKey = "your-open-ai-key-here";
+var openaiApiKey = "your-api-key-goes-here";
 
 // Number of days to look back in the inbox from today.
-var numDaysToLookBack = 2;
+var numDaysToLookBack = 7;
 
 // Change to false if you want to summarize all emails.
 var onlyUnread = false; 
@@ -13,60 +13,41 @@ var onlyUnread = false;
 var inboxType = 'primary';
 
 // This is the master prompt for summarizing the email. You can modify the below to change the instructions to the LLM.
-var summarizationInstruction = "You are an email summarizer and will be given a subject and an email. Summarize the email in a single sentence." 
+var summarizationInstruction = "You are an email summarizer and will be given one or more emails. Summarize the emails in 5-10 bullet points highlighting important deadlines or upcoming activities for 1st or 5th grade classes or other mentions of Julien or Elon that may be noteworthy. If there are relative dates mentioned like yesterday or tomorrow, return the actual date. For any bullet points, please include link to email in parentheses at the end of the bullet point. Use the • character and generate plain text (not markdown)." 
 
 // The main calling function.
-function createGoogleDocReport() {
-  var numDaysToLookBack = 2;
+function sendSummaryEmail() {
+  var numDaysToLookBack = 7;
   var today = new Date();
   var startDate = new Date(today.getTime() - numDaysToLookBack * 24 * 60 * 60 * 1000);
   var startDateString = startDate.toISOString().substring(0, 10).replace(/-/g, '/');
   var endDateString = today.toISOString().substring(0, 10).replace(/-/g, '/');
-  var docName = `Email Summary Report ${inboxType} ${startDateString} to ${endDateString}`;
-  var doc = getOrCreateDocument(docName);
-  var body = doc.getBody();
-  body.clear();
-  
+  var emailSubject = `Inspire Highlights - ${startDateString}–${endDateString}`;
+  var messagesString = '';
+
   var searchQuery = `after:${startDateString} `;
-  searchQuery += (onlyUnread ? 'is:unread' : '') + `category:${inboxType}`;
-  console.log(searchQuery);
+  searchQuery += (onlyUnread ? 'is:unread' : '') + `(@dpsk12.net OR autoreply@bloomz.net OR "inspire elementary" OR "Inspire Elementary" OR "Denver Public Schools" OR "Bloomz" OR "bloomz") -from:kyle.rove@gmail.com -from:yujess2000@gmail.com`;
   var threads = GmailApp.search(searchQuery);
-  
+  Logger.log('Search query: ' + searchQuery);
+  Logger.log('Number of emails: ' + threads.length);
+
   threads.forEach(thread => {
     var messages = GmailApp.getMessagesForThreads([thread])[0]; // Assuming fetching first message per thread
     messages.forEach(message => {
-      if (message.isUnread()) {
         var messageId = message.getId();
-          var sender = extractSenderName(message.getFrom());
+        var sender = extractSenderName(message.getFrom());
         var date = message.getDate();
-        var summary = summarize(message.getSubject(), message.getPlainBody());
-        
-        // Add content to the document
         var emailLink = "https://mail.google.com/mail/u/0/#inbox/" + messageId;
-        var senderDateText = `${sender} (${date.toLocaleDateString()})`;
-        body.appendParagraph(senderDateText).setBold(true);
-        var summaryParagraph = body.appendParagraph(summary);
-        summaryParagraph.setBold(false);
-        var linkParagraph = body.appendParagraph(emailLink)
-        linkParagraph.setLinkUrl(emailLink);
-        linkParagraph.setBold(false);  // Link in normal text
-        body.appendHorizontalRule(); // Adds a visual separator
-      }
+        var messageString = 'Date: ' + message.getDate() + "\n" + 'Link: ' + emailLink + "\n" + 'From: ' + message.getFrom() + "\n" + 'Subject: ' + message.getSubject() + "\n" + 'Body: ' + message.getPlainBody() + "\n\n-----------------------------------\n\n";
+        messagesString = messagesString + messageString;
     });
   });
-  
-  doc.saveAndClose(); // Save and close the document
-  Logger.log('Document created: ' + doc.getUrl());
-}
 
-// Gets the existing document or creates the document if not found.
-function getOrCreateDocument(docName) {
-  var files = DriveApp.getFilesByName(docName);
-  if (files.hasNext()) {
-    return DocumentApp.openById(files.next().getId());
-  } else {
-    return DocumentApp.create(docName);
-  }
+  // summarize
+  var summary = summarize(messagesString);
+  GmailApp.sendEmail('kyle.rove@gmail.com',emailSubject,summary)
+  Logger.log('Total message length: ' + messagesString.length)
+  Logger.log('Email sent to kyle.rove@gmail.com');
 }
 
 // From the google sender name, only extract the name portion.
@@ -77,12 +58,12 @@ function extractSenderName(fromField) {
 }
 
 // Call OpenAI and summarize the email.
-function summarize(subject, body) {
+function summarize(emails) {
   var apiKey = openaiApiKey;  // Ensure to replace this with your actual API key from OpenAI
   var apiURL = "https://api.openai.com/v1/chat/completions";
 
-  body = body.substring(0,3000)
-  user_message = "Here's the email:\nSubject: " + subject +"\nBody: " + body;
+  //body = body.substring(0,3000)
+  //user_message = "Here's the email:\nSubject: " + subject +"\nBody: " + body;
   // Configure the data payload as specified
   var data = {
     "model": "gpt-4o-mini",
@@ -93,11 +74,11 @@ function summarize(subject, body) {
       },
       {
         "role": "user",
-        "content": user_message
+        "content": emails
       }
     ],
     "temperature": 0.1, // Keep it 0.1 to keep LLM from mischief. Increase at your own risk.
-    "max_tokens": 3000, // Modify per your long email requirement and token budget.
+    "max_tokens": 16384, // Modify per your long email requirement and token budget.
     "top_p": 1,
     "frequency_penalty": 0,
     "presence_penalty": 0
